@@ -1,0 +1,72 @@
+{
+  "name": "md-in-chrome",
+  "displayName": "Open Markdown in Chrome",
+  "description": "Right-click any Markdown file in the Explorer to open it instantly in Google Chrome.",
+  "version": "0.0.1",
+  "publisher": "com-princepy",
+  "icon": "images/icon.png",
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "chrome",
+    "preview",
+    "open",
+    "browser"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/princeppy/vscode.md-in-chrome"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "md-in-chrome.openInChrome",
+        "title": "Open in Chrome",
+        "category": "Markdown in Chrome"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "md-in-chrome.openInChrome",
+          "when": "resourceExtname == .md && !explorerResourceIsFolder",
+          "group": "navigation@99"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "md-in-chrome.openInChrome",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Open Markdown in Chrome",
+      "properties": {
+        "md-in-chrome.browserApp": {
+          "type": "string",
+          "default": "Google Chrome",
+          "description": "The macOS application name passed to the `open -a` command. Change this if you use Chrome Canary, Chromium, or another Chromium-based browser.",
+          "scope": "machine"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}
