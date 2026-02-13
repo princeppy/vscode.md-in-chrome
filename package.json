@@ -2,7 +2,7 @@
   "name": "md-in-chrome",
   "displayName": "Open Markdown in Chrome",
   "description": "Right-click any Markdown file in the Explorer to open it instantly in Google Chrome.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "com-princepy",
   "icon": "images/icon.png",
   "categories": [
