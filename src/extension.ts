@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
-import { execFile } from "child_process";
+import { execFile, ExecFileException } from "child_process";
 
 export function activate(context: vscode.ExtensionContext): void {
   const command = vscode.commands.registerCommand(
     "md-in-chrome.openInChrome",
-    (uri: vscode.Uri) => {
-      openMarkdownInChrome(uri);
+    (uri?: vscode.Uri) => {
+      const target = uri ?? vscode.window.activeTextEditor?.document.uri;
+      openInChrome(target);
     },
   );
 
@@ -17,20 +18,16 @@ export function deactivate(): void {
   // Nothing to clean up.
 }
 
-function openMarkdownInChrome(uri: vscode.Uri): void {
-  // Guard: uri must be present. Since this command is context-menu-only,
-  // VSCode always passes it — but we guard defensively.
+function openInChrome(uri: vscode.Uri | undefined): void {
   if (!uri || !uri.fsPath) {
     vscode.window.showErrorMessage(
-      "Open in Chrome: No file path was provided. Please right-click a Markdown file in the Explorer.",
+      "Open in Chrome: No file path was provided. Right-click a Markdown or HTML file, or focus its editor and press Alt+B.",
     );
     return;
   }
 
   const fsPath = uri.fsPath;
 
-  // Guard: confirm the file exists on disk before invoking `open`.
-  // A file can disappear between the Explorer rendering it and the command firing.
   if (!fs.existsSync(fsPath)) {
     vscode.window.showErrorMessage(
       `Open in Chrome: File not found on disk — ${fsPath}`,
@@ -38,29 +35,65 @@ function openMarkdownInChrome(uri: vscode.Uri): void {
     return;
   }
 
-  // Read the configurable browser app name.
-  const config = vscode.workspace.getConfiguration("md-in-chrome");
-  const browserApp = config.get<string>("browserApp", "Google Chrome");
-
-  // Invoke `open -a "<browserApp>" "<filePath>"` via execFile (no shell interpolation).
-  execFile("open", ["-a", browserApp, fsPath], (error, _stdout, stderr) => {
-    if (error) {
-      const detail = stderr?.trim() || error.message;
-
-      // Show the error with an action button to jump directly to the setting.
-      vscode.window
-        .showErrorMessage(
-          `Open in Chrome: Failed to open the file. Check the 'md-in-chrome.browserApp' setting.\n\n${detail}`,
-          "Open Settings",
-        )
-        .then((selection) => {
-          if (selection === "Open Settings") {
-            vscode.commands.executeCommand(
-              "workbench.action.openSettings",
-              "md-in-chrome.browserApp",
-            );
-          }
-        });
+  launchChrome(fsPath, (error, stderr) => {
+    if (!error) {
+      return;
     }
+    const detail = stderr?.trim() || error.message;
+    vscode.window
+      .showErrorMessage(
+        `Open in Chrome: Failed to open the file.\n\n${detail}`,
+        "Open Settings",
+      )
+      .then((selection) => {
+        if (selection === "Open Settings") {
+          vscode.commands.executeCommand(
+            "workbench.action.openSettings",
+            "md-in-chrome.browserApp",
+          );
+        }
+      });
+  });
+}
+
+type LaunchCallback = (
+  error: ExecFileException | null,
+  stderr?: string,
+) => void;
+
+function launchChrome(fsPath: string, callback: LaunchCallback): void {
+  const platform = process.platform;
+
+  if (platform === "darwin") {
+    const config = vscode.workspace.getConfiguration("md-in-chrome");
+    const browserApp = config.get<string>("browserApp", "Google Chrome");
+    execFile("open", ["-a", browserApp, fsPath], (error, _stdout, stderr) => {
+      callback(error, stderr);
+    });
+    return;
+  }
+
+  if (platform === "win32") {
+    // `start` is a cmd builtin. The empty "" is the window title argument
+    // required when the first quoted token would otherwise be treated as one.
+    execFile(
+      "cmd",
+      ["/c", "start", "", "chrome", fsPath],
+      (error, _stdout, stderr) => {
+        callback(error, stderr);
+      },
+    );
+    return;
+  }
+
+  // Linux: try google-chrome, fall back to chromium.
+  execFile("google-chrome", [fsPath], (error, _stdout, stderr) => {
+    if (!error) {
+      callback(null);
+      return;
+    }
+    execFile("chromium", [fsPath], (fallbackError, _out, fallbackStderr) => {
+      callback(fallbackError, fallbackStderr || stderr);
+    });
   });
 }

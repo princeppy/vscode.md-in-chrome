@@ -1,8 +1,8 @@
 {
   "name": "md-in-chrome",
   "displayName": "Open Markdown in Chrome",
-  "description": "Right-click any Markdown file in the Explorer to open it instantly in Google Chrome.",
-  "version": "0.0.2",
+  "description": "Open Markdown and HTML files in Google Chrome from the Explorer, editor, tab, title-bar icon, or with Alt+B.",
+  "version": "0.0.3",
   "publisher": "com-princepy",
   "icon": "images/icon.png",
   "categories": [
@@ -10,6 +10,7 @@
   ],
   "keywords": [
     "markdown",
+    "html",
     "chrome",
     "preview",
     "open",
@@ -29,15 +30,36 @@
       {
         "command": "md-in-chrome.openInChrome",
         "title": "Open in Chrome",
-        "category": "Markdown in Chrome"
+        "category": "Markdown in Chrome",
+        "icon": "$(link-external)"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "command": "md-in-chrome.openInChrome",
-          "when": "resourceExtname == .md && !explorerResourceIsFolder",
+          "when": "(resourceExtname == .md || resourceExtname == .html) && !explorerResourceIsFolder",
           "group": "navigation@99"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "md-in-chrome.openInChrome",
+          "when": "resourceExtname == .md || resourceExtname == .html",
+          "group": "navigation@99"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "md-in-chrome.openInChrome",
+          "when": "resourceExtname == .md || resourceExtname == .html",
+          "group": "navigation"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "md-in-chrome.openInChrome",
+          "when": "resourceExtname == .md || resourceExtname == .html"
         }
       ],
       "commandPalette": [
@@ -47,13 +69,20 @@
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "md-in-chrome.openInChrome",
+        "key": "alt+b",
+        "when": "resourceExtname == .md || resourceExtname == .html"
+      }
+    ],
     "configuration": {
       "title": "Open Markdown in Chrome",
       "properties": {
         "md-in-chrome.browserApp": {
           "type": "string",
           "default": "Google Chrome",
-          "description": "The macOS application name passed to the `open -a` command. Change this if you use Chrome Canary, Chromium, or another Chromium-based browser.",
+          "description": "macOS only. The application name passed to `open -a`. Change this for Chrome Canary, Chromium, etc.",
           "scope": "machine"
         }
       }
